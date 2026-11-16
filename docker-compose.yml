@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    image: sitemapaudit:local
+    environment:
+      SITEMAPAUDIT_DB: /data/sitemapaudit.sqlite
+      SAMPLE_SITE_BASE: http://sample-site:8000
+      EVAL_DATE: "2026-11-15"
+      TZ: Asia/Shanghai
+    ports:
+      - "18201:8000"
+    volumes:
+      - audit-data:/data
+    depends_on:
+      sample-site:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://127.0.0.1:8000/healthz', timeout=2.0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+
+  sample-site:
+    image: python:3.11-slim
+    command: ["python", "/site/serve.py", "--root", "/site", "--port", "8000"]
+    volumes:
+      - ./sample_site:/site:ro
+    ports:
+      - "19201:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2.0)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
+volumes:
+  audit-data:

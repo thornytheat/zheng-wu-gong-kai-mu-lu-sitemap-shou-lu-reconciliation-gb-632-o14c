@@ -1,0 +1,34 @@
+/* L8 政企台账 · 变量层：冷蓝灰、方角、密排；只定义值，不写选择器结构 */
+:root {
+  --bg: #eef2f6;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --surface-3: #e9eff5;
+  --ink: #1c2a38;
+  --ink-muted: #5c7186;
+  --ink-faint: #8b9daf;
+  --line: #d2dde7;
+  --line-strong: #9fb2c4;
+  --accent: #1d4e79;
+  --accent-ink: #ffffff;
+  --accent-soft: #dce7f1;
+  --ok: #1f6d4a;
+  --warn: #8a5a00;
+  --bad: #9a2b1f;
+  --info: #2c5f8a;
+  --font-ui: "Heiti SC", "SimHei", "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-doc: "Songti SC", "SimSun", "Noto Serif SC", serif;
+  --font-num: "DejaVu Sans Mono", "SFMono-Regular", Menlo, monospace;
+  --radius: 0px;
+  --radius-sm: 0px;
+  --pad: 8px;
+  --pad-lg: 14px;
+  --gap: 10px;
+  --shadow: none;
+  --rule: 1px solid var(--line);
+  --rule-strong: 2px solid var(--line-strong);
+  --step-1: 12px;
+  --step-2: 13px;
+  --step-3: 15px;
+  --step-4: 18px;
+}

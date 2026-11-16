@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}对账缺陷 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>对账缺陷</h1>
+  <span class="amount">
+    {% if accounts %}缺陷 {{ accounts.findings_total | num }} 条 · 覆盖率 {{ accounts.coverage | pct }}{% endif %}
+  </span>
+</div>
+
+{% if accounts %}
+<section class="ledger">
+  <div><dt>目录条目</dt><dd>{{ accounts.catalog_keys | num }}<small>去重后</small></dd></div>
+  <div><dt>收录地址</dt><dd>{{ accounts.sitemap_keys | num }}<small>去重后</small></dd></div>
+  <div><dt>三向交集</dt><dd>{{ accounts.three_way | num }}<small>个</small></dd></div>
+  <div><dt>四账</dt><dd>
+    <span class="tag {{ 'ok' if accounts.all_balanced else 'bad' }}">{{ "已对平" if accounts.all_balanced else "不平" }}</span>
+  </dd></div>
+</section>
+
+<div class="panel-2">
+  <section class="panel">
+    <header><h2>可达三态</h2><span>{{ accounts.probed | num }} 个地址</span></header>
+    <div class="body scroll">
+      <table class="grid">
+        <thead><tr><th>状态</th><th class="num">条数</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag ok">200 无跳转</span></td><td class="num">{{ accounts.alive_ok | num }}</td></tr>
+          <tr><td><span class="tag warn">跳转</span></td><td class="num">{{ accounts.alive_redirect | num }}</td></tr>
+          <tr><td><span class="tag bad">死链</span></td><td class="num">{{ accounts.dead | num }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>目录与收录</h2><span>{{ accounts.both | num }} 个双侧都有</span></header>
+    <div class="body scroll">
+      <table class="grid">
+        <thead><tr><th>侧</th><th class="num">条数</th></tr></thead>
+        <tbody>
+          <tr><td>仅在目录</td><td class="num">{{ accounts.only_in_catalog | num }}</td></tr>
+          <tr><td>双侧都有</td><td class="num">{{ accounts.both | num }}</td></tr>
+          <tr><td>仅在收录</td><td class="num">{{ accounts.only_in_sitemap | num }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <header><h2>三向交叉表</h2><span>{{ crosstab.total | num }} 个地址</span></header>
+  <div class="body scroll">
+    <table class="cross">
+      <thead>
+        <tr>
+          <th>侧</th>
+          {% for state in crosstab.states %}<th>{{ state.label }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for side in crosstab.sides %}
+        <tr>
+          <th>{{ side.label }}</th>
+          {% for state in crosstab.states %}
+          {% set cell = crosstab.cells[side.key][state.key] %}
+          <td class="{{ 'zero' if cell.count == 0 else '' }}">
+            {{ cell.count | num }}
+            {% if cell.samples %}<span class="samples">{{ cell.samples | join(" · ") }}</span>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <header><h2>缺陷分类</h2><span>{{ accounts.findings_total | num }} 条</span></header>
+  <div class="body scroll">
+    <table class="grid">
+      <thead><tr><th>分类</th><th class="num">条数</th><th>规则</th></tr></thead>
+      <tbody>
+      {% for row in explain %}
+        <tr>
+          <td><a href="/reach?category={{ row.code }}">{{ row.label }}</a></td>
+          <td class="num">{{ accounts.by_category[row.code] | num }}</td>
+          <td class="wrap">{{ row.rule }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <header><h2>站点分布</h2><span>{{ by_site | length }} 站</span></header>
+  <div class="body scroll">
+    <table class="grid">
+      <thead><tr><th>站点</th><th class="num">地址</th><th class="num">对平</th><th class="num">缺陷</th><th class="num">死链</th></tr></thead>
+      <tbody>
+      {% for row in by_site %}
+        <tr>
+          <td>{{ row.site }}</td>
+          <td class="num">{{ row.total | num }}</td>
+          <td class="num">{{ row.ok | num }}</td>
+          <td class="num">{{ row.findings | num }}</td>
+          <td class="num">{{ row.dead | num }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<section class="panel"><div class="body"><p class="empty">还没有巡检记录。</p></div></section>
+{% endif %}
+{% endblock %}

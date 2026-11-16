@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}站点与目录 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>站点与目录</h1>
+  <span class="amount">{{ catalog_total | num }} 条目录条目 · {{ sitemap | length | num }} 条收录行</span>
+</div>
+
+<section class="filters">
+  <form method="get" action="/sites">
+    <label for="site">站点</label>
+    <select id="site" name="site" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for item in sites %}
+      <option value="{{ item.code }}" {{ 'selected' if item.code == site else '' }}>{{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <span class="tag info">目录页 {{ pages | length }} 个</span>
+  <span class="tag {{ 'bad' if quarantine_total else 'ok' }}">隔离 {{ quarantine_total | num }} 行</span>
+  <a class="btn" href="/api/quarantine.csv{{ '?site=' ~ site if site else '' }}">导出隔离区</a>
+  <span class="tag {{ 'warn' if conflicts else 'ok' }}">冲突 {{ conflicts | length }} 条</span>
+</section>
+
+<section class="panel">
+  <header><h2>目录页</h2><span>采信 {{ pages | length }} 页</span></header>
+  <div class="body scroll">
+    <table class="grid">
+      <thead><tr><th>站点</th><th>地址</th><th class="num">条目</th><th>编码</th><th>标题</th></tr></thead>
+      <tbody>
+      {% for page in pages %}
+        <tr>
+          <td>{{ page.site }}</td>
+          <td class="addr" title="{{ page.url }}">{{ page.url }}</td>
+          <td class="num">{{ page.entries | num }}</td>
+          <td><span class="tag">{{ page.encoding }}</span></td>
+          <td class="wrap">{{ page.title }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <header>
+    <h2>目录条目</h2>
+    <span>显示 {{ entries | length | num }} / {{ catalog_total | num }} 条</span>
+  </header>
+  <div class="body scroll">
+    {% if entries %}
+    <table class="grid" id="entry-table">
+      <thead>
+        <tr>
+          <th class="num">行</th><th>站点</th><th>事项编码</th><th>部门</th>
+          <th>原始地址</th><th>规范地址</th><th>属性代别</th><th>改写</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in entries %}
+        <tr>
+          <td class="num">{{ row.line_no }}</td>
+          <td>{{ row.site }}</td>
+          <td class="addr">{{ row.entry_code or "—" }}</td>
+          <td>{{ row.dept_code or "—" }}</td>
+          <td class="addr" title="{{ row.raw_href }}">{{ row.raw_href }}</td>
+          <td class="addr" title="{{ row.url }}">{{ row.url }}</td>
+          <td><span class="tag {{ 'warn' if row.attr_scheme == 'legacy' else '' }}">{{ row.attr_scheme | attr }}</span></td>
+          <td class="wrap">
+            {% for note in row.notes %}<span class="tag info">{{ note | note_label }}</span> {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">没有目录条目。</p>
+    {% endif %}
+  </div>
+</section>
+
+<div class="panel-2">
+  <section class="panel">
+    <header><h2>隔离区</h2><span>{{ quarantine_total | num }} 行</span></header>
+    <div class="body scroll">
+      {% if quarantine %}
+      <table class="grid">
+        <thead><tr><th>站点</th><th>来源</th><th class="num">行</th><th>原因</th><th>原文</th></tr></thead>
+        <tbody>
+        {% for row in quarantine %}
+          <tr>
+            <td>{{ row.site }}</td>
+            <td>{{ row.source }}</td>
+            <td class="num">{{ row.row_no }}</td>
+            <td><span class="tag {{ 'bad' if row.level == 'error' else 'warn' }}">{{ row.label }}</span></td>
+            <td class="addr" title="{{ row.excerpt }}">{{ row.excerpt }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">没有隔离行。</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>收录冲突</h2><span>{{ conflicts | length }} 条</span></header>
+    <div class="body scroll">
+      {% if conflicts %}
+      <table class="grid">
+        <thead><tr><th>站点</th><th>地址</th><th>保留</th><th>丢弃</th><th>规则</th></tr></thead>
+        <tbody>
+        {% for row in conflicts %}
+          <tr>
+            <td>{{ row.site }}</td>
+            <td class="addr" title="{{ row.raw_loc }}">{{ row.raw_loc }}</td>
+            <td class="addr">{{ row.kept }}</td>
+            <td class="addr">{{ row.dropped }}</td>
+            <td class="wrap">{{ row.rule }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">没有收录冲突。</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

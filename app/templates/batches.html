@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}批次历史 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>批次历史</h1>
+  <span class="amount">{{ batches.count | num }} 次巡检 · 阶段 {{ stage_flow }}</span>
+</div>
+
+<section class="panel">
+  <header><h2>批次列表</h2><span>最多 30 条</span></header>
+  <div class="body scroll">
+    {% if batches.rows %}
+    <table class="grid">
+      <thead>
+        <tr><th>批次号</th><th>状态</th><th>开始</th><th class="num">耗时</th>
+            <th class="num">缺陷</th><th>输入摘要</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for row in batches.rows %}
+        <tr>
+          <td><a href="/batches?run_id={{ row.run_id }}">{{ row.run_id }}</a></td>
+          <td><span class="tag {{ 'ok' if row.status == 'done' else 'warn' }}">{{ row.status | runstatus }}</span></td>
+          <td>{{ row.started_at | localts }}</td>
+          <td class="num">{{ row.elapsed_ms }} ms</td>
+          <td class="num">{{ row.findings_total | num }}</td>
+          <td class="addr">{{ row.digest_short }}</td>
+          <td>
+            <button type="button" class="resume" data-run="{{ row.run_id }}">续跑</button>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">还没有批次。</p>
+    {% endif %}
+  </div>
+</section>
+<div id="batch-notice" class="notice" hidden></div>
+
+{% if detail %}
+<div class="panel-2">
+  <section class="panel">
+    <header><h2>阶段</h2><span>{{ detail.status | runstatus }} · {{ detail.elapsed_ms }} ms</span></header>
+    <div class="body">
+      <ol class="stages">
+        {% for stage in detail.stages %}
+        <li>
+          <span class="tag {{ 'ok' if stage.status == 'done' else 'bad' }}">{{ stage.label }}</span>
+          <span class="flow">进 {{ stage.in_count | num }} · 出 {{ stage.out_count | num }} · 隔离 {{ stage.quarantine_count | num }}</span>
+          <span class="tag info">{{ stage.note }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>批次字段</h2><span>{{ detail.run_id }}</span></header>
+    <div class="body">
+      <dl class="kv">
+        <dt>批次键</dt><dd>{{ detail.batch_key }}</dd>
+        <dt>输入摘要</dt><dd>{{ detail.input_digest }}</dd>
+        <dt>站点</dt><dd>{{ detail.sites | join(" · ") }}</dd>
+        <dt>开始</dt><dd>{{ detail.started_at | localts }}</dd>
+        <dt>结束</dt><dd>{{ detail.finished_at | localts }}</dd>
+        <dt>剩余阶段</dt><dd>{{ detail.stage_state.pending | join(" · ") or "无" }}</dd>
+        <dt>缺陷</dt><dd>{{ detail.defect_summary.total | default(0) | num }}</dd>
+      </dl>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <header>
+    <h2>输入资源</h2>
+    <span>{{ detail.resources | length }} 个 · sha256 可复算</span>
+  </header>
+  <div class="body scroll">
+    <table class="grid">
+      <thead><tr><th>地址</th><th class="num">状态</th><th class="num">字节</th><th>sha256</th></tr></thead>
+      <tbody>
+      {% for row in detail.resources %}
+        <tr>
+          <td class="addr" title="{{ row.url }}">{{ row.url }}</td>
+          <td class="num"><span class="tag {{ 'ok' if row.status == 200 else 'bad' }}">{{ row.status }}</span></td>
+          <td class="num">{{ row.bytes | num }}</td>
+          <td class="addr">{{ row.digest_short }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/run.js" defer></script>{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}巡检运行 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>巡检运行</h1>
+  <span class="amount">
+    {% if run %}{{ run.stages | length }} 阶段 · {{ run.totals.findings_total }} 条缺陷{% else %}未运行{% endif %}
+  </span>
+</div>
+
+<section class="filters">
+  <button class="primary" id="run-btn" type="button">触发巡检</button>
+  <button id="resume-btn" type="button" {% if not run %}disabled{% endif %}>续跑</button>
+  <span id="run-status" class="tag">就绪</span>
+  <span class="flow">{{ stage_flow }}</span>
+</section>
+<div id="run-notice" class="notice" hidden></div>
+
+{% if run %}
+<section class="panel">
+  <header>
+    <h2>阶段账</h2>
+    <span>{{ run.run_id }} · {{ run.status | runstatus }} · {{ run.elapsed_ms }} ms</span>
+  </header>
+  <div class="body">
+    <ol class="stages">
+      {% for stage in stages %}
+      <li>
+        <span class="tag {{ 'ok' if stage.status == 'done' else 'bad' }}">{{ stage.label }}</span>
+        <span class="flow">进 {{ stage.in_count | num }} · 出 {{ stage.out_count | num }} · 隔离 {{ stage.quarantine_count | num }}</span>
+        <span class="tag info">{{ stage.note }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+
+<section class="ledger">
+  <div><dt>目录条目</dt><dd>{{ run.totals.catalog_rows | num }}<small>条</small></dd></div>
+  <div><dt>收录地址</dt><dd>{{ run.totals.sitemap_rows | num }}<small>条</small></dd></div>
+  <div><dt>探测地址</dt><dd>{{ run.totals.probed | num }}<small>个</small></dd></div>
+  <div><dt>覆盖率</dt><dd>{{ run.totals.coverage | pct }}</dd></div>
+</section>
+
+<div class="panel-2">
+  <section class="panel">
+    <header>
+      <h2>输入摘要</h2>
+      <span>{{ resources | length }} 个资源</span>
+    </header>
+    <div class="body scroll">
+      <table class="grid">
+        <thead><tr><th>地址</th><th class="num">状态</th><th class="num">字节</th><th>sha256</th></tr></thead>
+        <tbody>
+        {% for item in resources %}
+          <tr>
+            <td class="addr" title="{{ item.url }}">{{ item.url }}</td>
+            <td class="num"><span class="tag {{ 'ok' if item.status == 200 else 'bad' }}">{{ item.status }}</span></td>
+            <td class="num">{{ item.bytes | num }}</td>
+            <td class="addr">{{ item.sha256[:16] }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header>
+      <h2>原因码分布</h2>
+      <span>{{ reason_counts | length }} 类</span>
+    </header>
+    <div class="body">
+      {% if reason_counts %}
+      <ul class="bars">
+        {% set top = reason_counts[0].count %}
+        {% for row in reason_counts %}
+        <li>
+          <span title="{{ row.code }}">{{ row.label }}</span>
+          <span class="track"><span class="fill" style="width: {{ (row.count / top * 100) | round(0) }}%"></span></span>
+          <span class="n">{{ row.count | num }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">没有隔离行。</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% else %}
+<section class="panel">
+  <div class="body"><p class="empty">还没有巡检记录。</p></div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <header><h2>最近批次</h2><span>{{ batch_list.count }} 条</span></header>
+  <div class="body scroll">
+    <table class="grid">
+      <thead><tr><th>批次号</th><th>开始</th><th class="num">缺陷</th><th>状态</th><th>输入摘要</th></tr></thead>
+      <tbody>
+      {% for batch in batch_list.rows %}
+        <tr>
+          <td><a href="/batches?run_id={{ batch.run_id }}">{{ batch.run_id }}</a></td>
+          <td>{{ batch.started_at | localts }}</td>
+          <td class="num">{{ batch.findings_total | num }}</td>
+          <td><span class="tag {{ 'ok' if batch.status == 'done' else 'warn' }}">{{ batch.status | runstatus }}</span></td>
+          <td class="addr">{{ batch.digest_short }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/run.js" defer></script>{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}可达性明细 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>可达性明细</h1>
+  <span class="amount">{{ rows | length | num }} / {{ total | num }} 个地址</span>
+</div>
+
+<section class="filters">
+  <form method="get" action="/reach">
+    <label for="site">站点</label>
+    <select id="site" name="site" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for item in sites %}
+      <option value="{{ item.code }}" {{ 'selected' if item.code == site else '' }}>{{ item.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="category">分类</label>
+    <select id="category" name="category" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for code, label in categories.items() %}
+      <option value="{{ code }}" {{ 'selected' if code == category else '' }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <span class="tag bad">死链 {{ rows | selectattr("status", "ge", 400) | list | length }}</span>
+  <span class="tag warn">跳转 {{ rows | selectattr("hop_count", "gt", 0) | list | length }}</span>
+</section>
+
+<section class="panel">
+  <header><h2>探测结果</h2><span>最多 5 跳</span></header>
+  <div class="body scroll">
+    {% if rows %}
+    <table class="grid" id="reach-table">
+      <thead>
+        <tr>
+          <th>站点</th><th>分类</th><th class="num">状态</th><th class="num">跳转</th>
+          <th class="num">目录</th><th class="num">收录</th><th>规范地址</th><th>末态地址</th><th>原因码</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.site }}</td>
+          <td>
+            <span class="tag {{ 'ok' if row.category == 'OK' else ('bad' if row.category in ('CATALOG_DEAD', 'ONLY_IN_SITEMAP_DEAD') else 'warn') }}">
+              {{ row.category | category }}
+            </span>
+          </td>
+          <td class="num">{{ row.status }}</td>
+          <td class="num">{{ row.hop_count }}</td>
+          <td class="num">{{ row.in_catalog }}</td>
+          <td class="num">{{ row.in_sitemap }}</td>
+          <td class="addr" title="{{ row.url }}">{{ row.url }}</td>
+          <td class="addr" title="{{ row.final_url }}">{{ row.final_url }}</td>
+          <td><span class="tag info">{{ row.reason_label or "—" }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">没有探测记录。</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

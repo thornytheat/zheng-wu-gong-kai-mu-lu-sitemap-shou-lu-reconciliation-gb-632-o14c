@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}变更监测 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>变更监测</h1>
+  <span class="amount">
+    {% if data and data.status == "ok" %}
+    新增死链 {{ data.summary.bucket_counts.new_dead | num }} · 已修复 {{ data.summary.bucket_counts.recovered | num }}
+    {% else %}
+    本次巡检与基准的差异
+    {% endif %}
+  </span>
+</div>
+
+<section class="filters">
+  <form method="get" action="/watch">
+    <label for="base">基准</label>
+    <select id="base" name="base" onchange="this.form.submit()">
+      {% for key, label in sources.items() %}
+      <option value="{{ key }}" {{ 'selected' if key == base else '' }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <label for="site">站点</label>
+    <select id="site" name="site" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for item in sites %}
+      <option value="{{ item.code }}" {{ 'selected' if item.code == site else '' }}>{{ item.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="bucket">变化</label>
+    <select id="bucket" name="bucket" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for code, item in buckets.items() %}
+      <option value="{{ code }}" {{ 'selected' if code == bucket else '' }}>{{ item.label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <a class="btn" href="/api/watch/regressions.csv?base={{ base }}&amp;site={{ site }}&amp;bucket={{ bucket }}">导出回归清单</a>
+  <a class="btn" href="/api/watch/snapshot.json">导出本次快照</a>
+  <button type="button" id="print-btn">打印</button>
+</section>
+
+{% if not data %}
+<section class="panel"><div class="body">
+  <p class="empty">还没有巡检批次，先到<a href="/">巡检运行</a>触发一次。</p>
+</div></section>
+{% elif data.status == "no_base" %}
+<section class="panel"><div class="body">
+  <p class="empty">还没有对比基准：先完成两次巡检，或把基准切到样例快照。</p>
+</div></section>
+{% else %}
+<section class="ledger">
+  <div><dt>新增死链</dt><dd>{{ data.summary.bucket_counts.new_dead | num }}<small>条</small></dd></div>
+  <div><dt>已修复</dt><dd>{{ data.summary.bucket_counts.recovered | num }}<small>条</small></dd></div>
+  <div><dt>新增跳转</dt><dd>{{ data.summary.bucket_counts.new_redirect | num }}<small>条</small></dd></div>
+  <div><dt>基准不同</dt><dd>{{ data.summary.bucket_counts.basis | num }}<small>条</small></dd></div>
+</section>
+
+<div class="panel-2">
+  <section class="panel">
+    <header><h2>站点趋势</h2><span>{{ data.base.label }} · 最近 {{ data.trend.runs | length }} 批</span></header>
+    <div class="body scroll">
+      {% if data.trend.runs %}
+      <table class="grid">
+        <caption>每站死链 / 跳转</caption>
+        <thead>
+          <tr><th>批次</th><th>开始</th>
+            {% for site_code in data.trend.sites %}<th class="num">{{ site_code }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for item in data.trend.runs %}
+          <tr>
+            <td>{{ item.run_id }}</td>
+            <td>{{ item.started_at | localts }}</td>
+            {% for site_code in data.trend.sites %}
+            {% set cell = item.sites.get(site_code) %}
+            <td class="num">
+              {% if cell %}<span class="tag bad">{{ cell.dead }}</span> / <span class="tag warn">{{ cell.redirect }}</span>{% else %}—{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="empty">还没有批次可看趋势。</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>跳转环</h2><span>{{ data.cycles | length }} 组</span></header>
+    <div class="body scroll">
+      {% if data.cycles %}
+      <table class="grid">
+        <thead><tr><th class="num">入口</th><th>环内地址</th></tr></thead>
+        <tbody>
+        {% for item in data.cycles %}
+          <tr>
+            <td class="num">{{ item.count }}</td>
+            <td class="addr wrap">{{ item.members | join(" → ") }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p class="empty">本次没有跳转环。</p>{% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <header>
+    <h2>变化明细</h2>
+    <span>显示 {{ data.shown }} / 共 {{ data.summary.total }} 条</span>
+  </header>
+  <div class="body scroll">
+    {% if data.rows %}
+    <table class="grid" id="change-table">
+      <thead>
+        <tr><th>变化</th><th>站点</th><th>上次</th><th>本次</th><th class="num">状态码</th><th>地址</th></tr>
+      </thead>
+      <tbody>
+      {% for row in data.rows %}
+        <tr>
+          <td><span class="tag {{ row.level }}">{{ row.bucket_label }}</span></td>
+          <td>{{ row.site }}</td>
+          <td>{{ row.prev_state_label }}</td>
+          <td>{{ row.cur_state_label }}</td>
+          <td class="num">{{ row.status_prev }} → {{ row.status_cur }}</td>
+          <td class="addr" title="{{ row.url }}">{{ row.url }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="empty">这次没有变化。</p>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/watch.js" defer></script>{% endblock %}

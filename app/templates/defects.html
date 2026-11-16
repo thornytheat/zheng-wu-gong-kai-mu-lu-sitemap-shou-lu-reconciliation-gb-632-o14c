@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}缺陷单 · 目录对账{% endblock %}
+{% block body %}
+<div class="pagehead">
+  <h1>缺陷单</h1>
+  <span class="amount">{{ rows | length | num }} / {{ summary.total | num }} 条 · {{ run.run_id if run else "—" }}</span>
+</div>
+
+<section class="filters">
+  <form method="get" action="/defects">
+    <label for="site">站点</label>
+    <select id="site" name="site" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for item in sites %}
+      <option value="{{ item.code }}" {{ 'selected' if item.code == site else '' }}>{{ item.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="category">分类</label>
+    <select id="category" name="category" onchange="this.form.submit()">
+      <option value="">全部</option>
+      {% for code, label in categories.items() %}
+      <option value="{{ code }}" {{ 'selected' if code == category else '' }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <a class="btn" href="/api/defects.csv?site={{ site }}&category={{ category }}">导出 CSV</a>
+  <a class="btn" href="/api/export/manifest.json">运行清单</a>
+  <button type="button" id="print-btn">打印</button>
+</section>
+
+{% if rows %}
+<ol class="defects">
+  {% for row in rows %}
+  <li data-sev="{{ '错误' if row.category in ('CATALOG_DEAD', 'ONLY_IN_SITEMAP_DEAD') else ('警告' if row.category in ('REDIRECT_CHAIN', 'DUPLICATE_SLUG', 'ONLY_IN_CATALOG') else '提示') }}">
+    <div class="head">
+      <span class="no">{{ row.defect_no }}</span>
+      <span class="tag {{ 'bad' if row.category in ('CATALOG_DEAD', 'ONLY_IN_SITEMAP_DEAD') else 'warn' }}">{{ row.label }}</span>
+      <span class="tag">{{ row.site }}</span>
+      <span class="tag info">状态 {{ row.status }}</span>
+      <span class="tag info">跳转 {{ row.hop_count }}</span>
+      <span class="tag info">目录 {{ row.in_catalog }} · 收录 {{ row.in_sitemap }}</span>
+    </div>
+    <p class="addr">{{ row.url }}</p>
+    <p class="evidence">
+      {{ explain.get(row.category, "") }}
+      {% if row.reason_label %}· {{ row.reason_label }}{% endif %}
+      {% if row.raw_forms %}· 原文 {{ row.raw_forms | join(" ｜ ") }}{% endif %}
+    </p>
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<section class="panel"><div class="body"><p class="empty">没有缺陷。</p></div></section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/defects.js" defer></script>{% endblock %}

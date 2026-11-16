@@ -1,0 +1,155 @@
+/* L8 元件：公文表、方框状态标签、账目条、隔离区、缺陷单、打印 */
+table.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step-2);
+}
+table.grid th, table.grid td {
+  padding: 6px 8px;
+  border-bottom: var(--rule);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+table.grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-3);
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: var(--rule-strong);
+  font-size: var(--step-1);
+  letter-spacing: 0.04em;
+}
+table.grid tbody tr:nth-child(even) { background: var(--surface-2); }
+table.grid tbody tr:hover { background: var(--accent-soft); }
+table.grid td.num, table.grid th.num { text-align: right; font-family: var(--font-num); }
+table.grid td.wrap { white-space: normal; min-width: 220px; }
+table.grid td.addr { font-family: var(--font-num); font-size: 11.5px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+table.grid caption { text-align: left; padding: 4px 0 6px; color: var(--ink-muted); font-size: var(--step-1); }
+
+/* 方框状态标签：直角、1px 边框，不用药丸 */
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: var(--step-1);
+  line-height: 18px;
+  white-space: nowrap;
+}
+.tag.ok { border-color: var(--ok); color: var(--ok); }
+.tag.warn { border-color: var(--warn); color: var(--warn); }
+.tag.bad { border-color: var(--bad); color: var(--bad); }
+.tag.info { border-color: var(--info); color: var(--info); }
+.tag.solid { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* 账目条：四个数字并排，数字右对齐等宽 */
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: var(--rule);
+  background: var(--surface);
+}
+.ledger div {
+  padding: 10px 12px;
+  border-right: var(--rule);
+}
+.ledger div:last-child { border-right: 0; }
+.ledger dt { font-size: var(--step-1); color: var(--ink-muted); }
+.ledger dd {
+  margin: 2px 0 0;
+  font-family: var(--font-num);
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+.ledger dd small { font-size: var(--step-1); color: var(--ink-muted); margin-left: 4px; font-family: var(--font-ui); }
+
+/* 分类计数：横条 + 数字 */
+.bars { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bars li { display: grid; grid-template-columns: 110px 1fr 54px; align-items: center; gap: 8px; font-size: var(--step-1); }
+.bars .track { height: 10px; background: var(--surface-3); border: 1px solid var(--line); }
+.bars .fill { height: 100%; background: var(--accent); }
+.bars .n { text-align: right; font-family: var(--font-num); }
+
+/* 按钮：方角、无阴影 */
+button, .btn {
+  font: inherit;
+  font-size: var(--step-2);
+  padding: 5px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+button:hover, .btn:hover { background: var(--accent-soft); text-decoration: none; }
+button.primary { background: var(--accent); color: var(--accent-ink); }
+button.primary:hover { background: #163d60; }
+button:disabled { border-color: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; background: var(--surface-2); }
+button:focus-visible, a:focus-visible, select:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 1px;
+}
+
+/* 提示条与错误反馈 */
+.notice {
+  padding: 7px 12px;
+  border: var(--rule);
+  border-left: 3px solid var(--info);
+  background: var(--surface-2);
+  font-size: var(--step-2);
+}
+.notice.bad { border-left-color: var(--bad); color: var(--bad); }
+.notice.ok { border-left-color: var(--ok); color: var(--ok); }
+
+/* 交叉表 */
+table.cross { border-collapse: collapse; width: 100%; font-size: var(--step-2); }
+table.cross th, table.cross td { border: var(--rule); padding: 7px 9px; }
+table.cross th { background: var(--surface-3); font-weight: 600; font-size: var(--step-1); }
+table.cross td { font-family: var(--font-num); text-align: right; }
+table.cross td .samples { display: block; font-family: var(--font-num); font-size: 10.5px; color: var(--ink-faint); text-align: left; word-break: break-all; }
+table.cross td.zero { color: var(--ink-faint); }
+
+/* 阶段账 */
+ol.stages { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+ol.stages li {
+  display: grid;
+  grid-template-columns: 86px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px;
+  border: var(--rule);
+  background: var(--surface);
+}
+ol.stages .flow { font-size: var(--step-1); color: var(--ink-muted); font-family: var(--font-num); }
+
+/* 缺陷单：打印时逐条不断页 */
+ol.defects { list-style: none; margin: 0; padding: 0; }
+ol.defects > li {
+  border: var(--rule);
+  border-left: 3px solid var(--line-strong);
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--surface);
+  break-inside: avoid;
+}
+ol.defects > li[data-sev="错误"] { border-left-color: var(--bad); }
+ol.defects > li[data-sev="警告"] { border-left-color: var(--warn); }
+ol.defects .head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+ol.defects .no { font-family: var(--font-num); font-weight: 600; }
+ol.defects .addr { font-family: var(--font-num); font-size: 11.5px; color: var(--ink-muted); word-break: break-all; }
+ol.defects .evidence { font-size: var(--step-1); color: var(--ink-muted); }
+
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: var(--step-1); margin: 0; }
+.kv dt { color: var(--ink-muted); }
+.kv dd { margin: 0; font-family: var(--font-num); }
+
+@media print {
+  table.grid thead th { position: static; background: #eee; }
+  .tag { border-color: #666; color: #222; }
+  ol.defects > li { border-color: #999; }
+  button, .btn, .filters, .tabs { display: none; }
+}
